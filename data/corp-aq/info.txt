@@ -1,0 +1,2 @@
+training-samples testing-samples all-samples features sparsity maximum-squared-norm
+            2000             600        2600     9947    99.54                 1.00

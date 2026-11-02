@@ -1,0 +1,73 @@
+#!/bin/bash
+
+# Set directories path.
+ROOT_DIR=".."
+BLD_DIR="${ROOT_DIR}/build"
+DATA_DIR="${ROOT_DIR}/data"
+EXM_DIR="${ROOT_DIR}/example"
+BIN_DIR="${BLD_DIR}/bin"
+RLT_DIR="${EXM_DIR}/result"
+PLT_DIR="${EXM_DIR}/plot"
+
+# Set algorithms list.
+ALG_LIST="SDCA SDCA-perm SDCA-cyclic SGD"
+
+# Set data set list.
+DATA_LIST="corp-aq"
+
+# Define auxiliary variables.
+RUN="all ${ALG_LIST} plot"
+if echo "${RUN}" | grep -qw "${1}"; then
+    LOSS="${2}"
+    DATA_SET="${3}"
+    EXM="${BIN_DIR}/${LOSS}"
+    DATA_TRAIN="${DATA_DIR}/${DATA_SET}/train.dat"
+    DATA_TEST="${DATA_DIR}/${DATA_SET}/test.dat"
+    XPT="${EXM_DIR}/experiment.txt"
+fi
+
+# Parse command line arguments and execute.
+case "${1}" in
+    make)
+        make -C ${ROOT_DIR} --no-print-directory;;
+
+    clean)
+        if [ "${2}" = "--all" ]; then
+            for data in ${DATA_LIST}; do
+                CLEAN_RLT="rm -f ${RLT_DIR}/${data}/*.txt"; echo "${CLEAN_RLT}"; ${CLEAN_RLT}
+                CLEAN_PLT="rm -f ${PLT_DIR}/${data}/*.pdf"; echo "${CLEAN_PLT}"; ${CLEAN_PLT}
+            done
+            make -C ${ROOT_DIR} --no-print-directory clean
+        elif [ "${2}" = "--result" ]; then
+            for data in ${DATA_LIST}; do
+                CLEAN_RLT="rm -f ${RLT_DIR}/${data}/*.txt"; echo "${CLEAN_RLT}"; ${CLEAN_RLT}
+            done
+        elif [ "${2}" = "--plot" ]; then
+            for data in ${DATA_LIST}; do
+                CLEAN_PLT="rm -f ${PLT_DIR}/${data}/*.pdf"; echo "${CLEAN_PLT}"; ${CLEAN_PLT}
+            done
+        else
+            make -C ${ROOT_DIR} --no-print-directory clean
+        fi ;;
+
+    all)
+        for alg in ${ALG_LIST}; do
+            echo "Running ${alg} ..."
+            ${EXM} ${alg} ${DATA_TRAIN} ${DATA_TEST} ${XPT} > "${RLT_DIR}/${DATA_SET}/${alg}--${LOSS}--${DATA_SET}.txt"
+        done ;;
+
+    SDCA|SDCA-perm|SDCA-cyclic|SGD)
+        ALG="${1}"
+        echo "Running ${ALG} ..."
+        ${EXM} ${ALG} ${DATA_TRAIN} ${DATA_TEST} ${XPT} > "${RLT_DIR}/${DATA_SET}/${ALG}--${LOSS}--${DATA_SET}.txt";;
+
+    plot)
+        python "${EXM_DIR}/plot.py" ${LOSS} ${DATA_SET};;
+
+    data)
+        DATA_SET="${2}"
+        python "${DATA_DIR}/data.py" ${DATA_SET};;
+
+    *)
+        echo "Invalid first argument.";;
+esac
